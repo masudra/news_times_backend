@@ -125,12 +125,9 @@ async function run() {
         });
 
 
-
-
-
         // Confirm MongoDB connection
         await client.db("admin").command({ ping: 1 });
-        console.log("✅ Connected to MongoDB!");
+        console.log(" Connected to MongoDB!");
     } catch (err) {
         console.error("MongoDB connection error:", err);
     }
@@ -139,7 +136,7 @@ run().catch(console.dir);
 
 // Default route
 app.get('/', (req, res) => {
-    res.send('✅ Hello! This is MTS Blog Server');
+    res.send('Hello! This is MTS Blog Server');
 });
 
 // Start server
