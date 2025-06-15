@@ -85,7 +85,7 @@ async function run() {
         // Register user with hashed password
         app.post('/users', async (req, res) => {
             try {
-                const { name, email, password } = req.body;
+                const { name, email, password, role } = req.body;
 
                 if (!name || !email || !password) {
                     return res.status(400).json({ error: 'Name, email and password are required' });
@@ -103,7 +103,8 @@ async function run() {
                 const newUser = {
                     name,
                     email,
-                    password: hashedPassword
+                    password: hashedPassword,
+                    role: role
                 };
 
                 const result = await usersCollection.insertOne(newUser);
@@ -113,6 +114,8 @@ async function run() {
                 res.status(500).json({ error: 'Registration failed' });
             }
         });
+
+
 
         // Login user
         app.post('/login', async (req, res) => {
