@@ -115,33 +115,35 @@ async function run() {
             }
         });
 
-
         // Login user
         app.post('/login', async (req, res) => {
             const { email, password } = req.body;
 
             if (!email || !password) {
-                return res.status(400).json({ message: 'Email and password are required' });
+                return res.status(400).json({ error: 'Email and password are required' });
             }
+            try {
+                const user = await usersCollection.findOne({ email });
+                if (!user) {
+                    return res.status(404).json({ error: 'User not found' });
+                }
+                const passwordMatch = await bcrypt.compare(password, user.password);
+                if (!passwordMatch) {
+                    return res.status(401).json({ error: 'Incorrect password' });
+                }
 
-            const user = await usersCollection.findOne({ email });
-            if (!user) {
-                return res.status(404).json({ message: 'User not found' });
+                res.json({
+                    message: 'Login successful',
+                    user: {
+                        name: user.name,
+                        email: user.email,
+                        role: user.role,
+                    },
+                });
+            } catch (err) {
+                console.error('Login error:', err);
+                res.status(500).json({ error: 'Internal server error' });
             }
-
-            const passwordMatch = await bcrypt.compare(password, user.password);
-            if (!passwordMatch) {
-                return res.status(401).json({ message: 'Incorrect password' });
-            }
-
-            res.json({
-                message: 'Login successful',
-                user: {
-                    name: user.name,
-                    email: user.email,
-                    role: user.role,
-                },
-            });
         });
 
 
