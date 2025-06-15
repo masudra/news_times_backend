@@ -116,7 +116,6 @@ async function run() {
         });
 
 
-
         // Login user
         app.post('/login', async (req, res) => {
             const { email, password } = req.body;
@@ -125,26 +124,61 @@ async function run() {
                 return res.status(400).json({ message: 'Email and password are required' });
             }
 
+            const user = await usersCollection.findOne({ email });
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+
+            const passwordMatch = await bcrypt.compare(password, user.password);
+            if (!passwordMatch) {
+                return res.status(401).json({ message: 'Incorrect password' });
+            }
+
+            res.json({
+                message: 'Login successful',
+                user: {
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                },
+            });
+        });
+
+
+        // Get all users
+        app.get('/users', async (req, res) => {
             try {
-                const user = await usersCollection.findOne({ email });
-
-                if (!user) {
-                    return res.status(404).json({ message: 'User not found' });
-                }
-
-                // Fix: Compare hashed password properly using bcrypt
-                const passwordMatch = await bcrypt.compare(password, user.password);
-                if (!passwordMatch) {
-                    return res.status(401).json({ message: 'Incorrect password' });
-                }
-
-                // Do NOT send password back in response
-                res.json({ message: 'Login successful', user: { name: user.name, email: user.email } });
+                const users = await usersCollection.find({}, { projection: { password: 0 } }).toArray();
+                res.send(users);
             } catch (err) {
-                console.error('Login error:', err);
-                res.status(500).json({ message: 'Login failed' });
+                res.status(500).json({ message: 'Failed to fetch users' });
             }
         });
+
+        // Update user role
+        app.put('/users/:id/role', async (req, res) => {
+            const { id } = req.params;
+            const { role } = req.body;
+
+            if (!['user', 'admin'].includes(role)) {
+                return res.status(400).json({ message: 'Invalid role' });
+            }
+
+            try {
+                const filter = { _id: new ObjectId(id) };
+                const updateDoc = { $set: { role } };
+                const result = await usersCollection.updateOne(filter, updateDoc);
+                if (result.modifiedCount === 0) {
+                    return res.status(404).json({ message: 'User not found or role not changed' });
+                }
+                res.json({ message: 'User role updated' });
+            } catch (err) {
+                console.error(err);
+                res.status(500).json({ message: 'Failed to update role' });
+            }
+        });
+
+
 
         // Confirm MongoDB connection
         await client.db("admin").command({ ping: 1 });
