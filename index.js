@@ -27,14 +27,27 @@ async function run() {
     try {
         await client.connect();
 
-        const blogsCollection = client.db('mtsBlogDB').collection('blogs');
-        const usersCollection = client.db('mtsBlogDB').collection('users');
+        const blogsCollection = client.db('mtsTest').collection('blogs');
+        const usersCollection = client.db('mtsTest').collection('users');
 
-        // Get all blogs
+        // Get all blogs with language support
         app.get('/blogs', async (req, res) => {
-            const result = await blogsCollection.find().toArray();
-            res.send(result);
+            const lang = req.query.lang || 'en'; // en or bn
+            const allBlogs = await blogsCollection.find().toArray();
+
+            const localizedBlogs = allBlogs.map(blog => ({
+                _id: blog._id,
+                title: blog.title?.[lang] || "",
+                category: blog.category?.[lang] || "",
+                content: blog.content?.[lang] || "",
+                summary: blog.summary?.[lang] || "",
+                author: blog.author?.[lang] || "",
+                imageUrl: blog.imageUrl || "",
+                date: blog.date || null
+            }));
+            res.send(localizedBlogs);
         });
+
 
         // Get blog by id
         app.get('/blogs/:id', async (req, res) => {
