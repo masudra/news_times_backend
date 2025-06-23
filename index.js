@@ -193,9 +193,6 @@ async function run() {
             }
         });
 
-        // test new
-        
-
 
         // Confirm MongoDB connection
         await client.db("admin").command({ ping: 1 });
